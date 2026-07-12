@@ -9,3 +9,6 @@ venv/
 # SQLite (BD generada en runtime)
 *.db
 investsim.db
+
+# Secretos
+.env
