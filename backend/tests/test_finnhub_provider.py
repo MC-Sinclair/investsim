@@ -5,7 +5,7 @@ import pytest
 
 from investsim.config import FinnhubConfig
 from investsim.providers.finnhub import FinnhubMarketDataProvider
-from investsim.providers.market_data import UnknownSymbol
+from investsim.providers.market_data import ProviderUnavailable, UnknownSymbol
 
 
 def _client(handler) -> httpx.Client:
@@ -83,3 +83,54 @@ def test_cache_refetches_after_ttl_expires():
     provider.get_quote("AAPL")
 
     assert handler.calls == 2
+
+
+def test_retries_on_429_then_succeeds():
+    responses = [
+        httpx.Response(429, json={}),
+        httpx.Response(200, json={"c": 120.0, "t": 1_752_000_000}),
+    ]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return responses.pop(0)
+
+    slept: list[float] = []
+    provider = FinnhubMarketDataProvider(
+        _cfg(), client=_client(handler), sleep=slept.append
+    )
+    quote = provider.get_quote("AAPL")
+
+    assert quote.price == 120.0
+    assert slept == [0.5]  # esperó una vez antes del reintento con éxito
+
+
+def test_raises_provider_unavailable_after_exhausting_retries():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, json={})
+
+    slept: list[float] = []
+    provider = FinnhubMarketDataProvider(
+        _cfg(), client=_client(handler), sleep=slept.append
+    )
+    with pytest.raises(ProviderUnavailable):
+        provider.get_quote("AAPL")
+
+    assert slept == [0.5, 1.0]  # 3 intentos => 2 esperas entre ellos
+
+
+def test_client_error_401_does_not_retry():
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(401, json={})
+
+    slept: list[float] = []
+    provider = FinnhubMarketDataProvider(
+        _cfg(), client=_client(handler), sleep=slept.append
+    )
+    with pytest.raises(ProviderUnavailable):
+        provider.get_quote("AAPL")
+
+    assert calls["n"] == 1  # una sola petición, sin reintentos
+    assert slept == []

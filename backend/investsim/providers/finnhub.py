@@ -8,6 +8,7 @@ import httpx
 
 from investsim.config import FinnhubConfig
 from investsim.providers.market_data import (
+    ProviderUnavailable,
     Quote,
     UnknownSymbol,
 )
@@ -41,10 +42,7 @@ class FinnhubMarketDataProvider:
             if now - fetched_at < self.config.ttl:
                 return quote
 
-        response = self.client.get(
-            "/quote", params={"symbol": symbol, "token": self.config.api_key}
-        )
-        data = response.json()
+        data = self._fetch_quote_data(symbol)
         price = data.get("c", 0)
         if price == 0:
             raise UnknownSymbol(symbol)
@@ -52,3 +50,32 @@ class FinnhubMarketDataProvider:
         quote = Quote(symbol=symbol, price=float(price), as_of=as_of)
         self._cache[symbol] = (quote, now)
         return quote
+
+    def _fetch_quote_data(self, symbol: str) -> dict:
+        last_error: Exception | None = None
+        for attempt in range(self.config.max_retries):
+            try:
+                response = self.client.get(
+                    "/quote",
+                    params={"symbol": symbol, "token": self.config.api_key},
+                )
+            except httpx.HTTPError as exc:  # red / timeout
+                last_error = exc
+            else:
+                if response.status_code == 200:
+                    return response.json()
+                if response.status_code == 429 or response.status_code >= 500:
+                    last_error = ProviderUnavailable(
+                        f"Finnhub HTTP {response.status_code}"
+                    )
+                else:  # 4xx que no es 429 (p. ej. 401): no reintentar
+                    raise ProviderUnavailable(
+                        f"Finnhub HTTP {response.status_code} para {symbol}"
+                    )
+
+            if attempt < self.config.max_retries - 1:
+                self.sleep(0.5 * 2**attempt)
+
+        raise ProviderUnavailable(
+            f"Finnhub no disponible tras {self.config.max_retries} intentos"
+        ) from last_error
