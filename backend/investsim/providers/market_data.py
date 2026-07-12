@@ -12,7 +12,15 @@ class Quote:
     as_of: datetime
 
 
-class UnknownSymbol(Exception):
+class MarketDataError(Exception):
+    pass
+
+
+class UnknownSymbol(MarketDataError):
+    pass
+
+
+class ProviderUnavailable(MarketDataError):
     pass
 
 
