@@ -31,8 +31,16 @@ class FinnhubMarketDataProvider:
         )
         self.clock = clock
         self.sleep = sleep
+        self._cache: dict[str, tuple[Quote, datetime]] = {}
 
     def get_quote(self, symbol: str) -> Quote:
+        now = self.clock()
+        cached = self._cache.get(symbol)
+        if cached is not None:
+            quote, fetched_at = cached
+            if now - fetched_at < self.config.ttl:
+                return quote
+
         response = self.client.get(
             "/quote", params={"symbol": symbol, "token": self.config.api_key}
         )
@@ -41,4 +49,6 @@ class FinnhubMarketDataProvider:
         if price == 0:
             raise UnknownSymbol(symbol)
         as_of = datetime.fromtimestamp(data["t"], tz=timezone.utc)
-        return Quote(symbol=symbol, price=float(price), as_of=as_of)
+        quote = Quote(symbol=symbol, price=float(price), as_of=as_of)
+        self._cache[symbol] = (quote, now)
+        return quote
