@@ -34,7 +34,7 @@ El núcleo de dominio **no depende** de Finnhub, Claude ni FastAPI: son detalles
 
 ```
 Frontend (React)  ──REST──►  API (FastAPI)  ──►  Servicios de dominio
-                                                  ├─ AgentService     (datos → Claude → recomendación)
+                                                  ├─ AgentService     (datos → reglas → recomendación)
                                                   ├─ PortfolioService (capital virtual, abrir operación)
                                                   └─ SettlementService(liquidación perezosa, mark-to-market)
                                                           │
