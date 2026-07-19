@@ -19,7 +19,7 @@ El proyecto está **en fase de diseño**: por ahora solo existen documentos, aú
 
 | Tema | v1 | Futuro |
 |------|----|--------|
-| Cerebro del agente | Claude API (LLM) razonando sobre snapshot de mercado, salida JSON validada | Híbrido ML + Claude |
+| Cerebro del agente | Agente por reglas determinista (`RuleBasedEngine`) sobre señales intradía | LLM local (Ollama) tras la misma interfaz `RecommendationEngine`; Claude API si algún día hay presupuesto |
 | Activos | Acciones / ETFs | Crypto (Finnhub ya lo soporta) |
 | Fuente de datos | Finnhub, tras interfaz `MarketDataProvider` | Más proveedores tras la misma interfaz |
 | Predicción | Operación simulada de compra + `direction`/`confidence` para tasa de acierto | Cartera multi-activo |
@@ -74,4 +74,4 @@ python -m pytest backend/tests/test_settlement_service.py::test_mark_to_market_d
 
 ## Evolución futura (documentar, no construir hasta que se pida)
 
-Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3** agente Claude (con persistencia de `MarketSnapshot` y `AgentRun`) · **F4** API FastAPI · **F5** frontend React · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
+Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM local (Ollama) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI · **F5** frontend React · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
