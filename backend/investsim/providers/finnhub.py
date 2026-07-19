@@ -8,6 +8,7 @@ import httpx
 
 from investsim.config import FinnhubConfig
 from investsim.providers.market_data import (
+    MarketSnapshot,
     ProviderUnavailable,
     Quote,
     UnknownSymbol,
@@ -32,24 +33,43 @@ class FinnhubMarketDataProvider:
         )
         self.clock = clock
         self.sleep = sleep
-        self._cache: dict[str, tuple[Quote, datetime]] = {}
+        self._cache: dict[str, tuple[dict, datetime]] = {}
 
-    def get_quote(self, symbol: str) -> Quote:
+    def _quote_data(self, symbol: str) -> dict:
         now = self.clock()
         cached = self._cache.get(symbol)
         if cached is not None:
-            quote, fetched_at = cached
+            data, fetched_at = cached
             if now - fetched_at < self.config.ttl:
-                return quote
+                return data
 
         data = self._fetch_quote_data(symbol)
-        price = data.get("c", 0)
-        if price == 0:
+        if data.get("c", 0) == 0:
             raise UnknownSymbol(symbol)
-        as_of = datetime.fromtimestamp(data["t"], tz=timezone.utc)
-        quote = Quote(symbol=symbol, price=float(price), as_of=as_of)
-        self._cache[symbol] = (quote, now)
-        return quote
+        self._cache[symbol] = (data, now)
+        return data
+
+    def get_quote(self, symbol: str) -> Quote:
+        data = self._quote_data(symbol)
+        return Quote(
+            symbol=symbol,
+            price=float(data["c"]),
+            as_of=datetime.fromtimestamp(data["t"], tz=timezone.utc),
+        )
+
+    def get_snapshot(self, symbol: str) -> MarketSnapshot:
+        data = self._quote_data(symbol)
+        price = float(data["c"])
+        return MarketSnapshot(
+            symbol=symbol,
+            price=price,
+            day_change_pct=float(data.get("dp") or 0.0),
+            day_high=float(data.get("h") or price),
+            day_low=float(data.get("l") or price),
+            day_open=float(data.get("o") or price),
+            prev_close=float(data.get("pc") or price),
+            as_of=datetime.fromtimestamp(data["t"], tz=timezone.utc),
+        )
 
     def _fetch_quote_data(self, symbol: str) -> dict:
         last_error: Exception | None = None
