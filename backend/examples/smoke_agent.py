@@ -1,8 +1,10 @@
-"""Smoke manual: pide una recomendación real a Finnhub + reglas.
+"""Smoke manual: pide una recomendacion real a Finnhub + reglas.
 
-Uso (desde la raíz del repo, con FINNHUB_API_KEY en .env):
+Uso (desde la raiz del repo, con FINNHUB_API_KEY en .env):
     python backend/examples/smoke_agent.py AAPL
 """
+
+from __future__ import annotations
 
 import sys
 
@@ -23,10 +25,10 @@ def main() -> None:
     )
     rec = service.propose(symbol)
 
-    print(f"Símbolo:   {rec.symbol}")
-    print(f"Dirección: {rec.direction.value}  ({rec.horizon.value})")
+    print(f"Simbolo:   {rec.symbol}")
+    print(f"Direccion: {rec.direction.value}  ({rec.horizon.value})")
     print(f"Confianza: {rec.confidence:.2%}")
-    print(f"Importe:   {rec.suggested_amount:.2f} €")
+    print(f"Importe:   {rec.suggested_amount:.2f} EUR")
     print(f"Motivo:    {rec.rationale}")
     print()
     print(DISCLAIMER)
