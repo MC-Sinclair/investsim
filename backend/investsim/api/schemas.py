@@ -47,3 +47,10 @@ class PredictionOut(BaseModel):
     pnl_pct: float | None
     hit: bool | None
     current_value: float | None = None
+
+
+class PortfolioOut(BaseModel):
+    cash_balance: float
+    initial_capital: float
+    open_predictions_value: float
+    total_value: float

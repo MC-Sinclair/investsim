@@ -4,16 +4,25 @@ from dataclasses import asdict
 
 from fastapi import APIRouter, Depends
 
-from investsim.api.deps import get_agent_service, get_portfolio_service
+from investsim.api.deps import (
+    get_agent_service,
+    get_portfolio_repo,
+    get_portfolio_service,
+    get_prediction_repo,
+    get_settlement_service,
+)
 from investsim.api.schemas import (
     OpenPredictionIn,
+    PortfolioOut,
     PredictionOut,
     RecommendationIn,
     RecommendationOut,
 )
+from investsim.db.repositories import PortfolioRepository, PredictionRepository
 from investsim.db.tables import PredictionRow
 from investsim.services.agent_service import AgentService
 from investsim.services.portfolio_service import PortfolioService
+from investsim.services.settlement_service import SettlementService
 
 router = APIRouter()
 
@@ -65,3 +74,24 @@ def post_prediction(
         rationale=body.rationale,
     )
     return _prediction_to_out(pred, current_value=None)
+
+
+@router.get("/portfolio", response_model=PortfolioOut)
+def get_portfolio(
+    settlement_service: SettlementService = Depends(get_settlement_service),
+    portfolio_repo: PortfolioRepository = Depends(get_portfolio_repo),
+    prediction_repo: PredictionRepository = Depends(get_prediction_repo),
+) -> PortfolioOut:
+    settlement_service.settle_due()
+    portfolio = portfolio_repo.get()
+    open_value = sum(
+        settlement_service.mark_to_market(p)
+        for p in prediction_repo.list_all()
+        if p.status == "open"
+    )
+    return PortfolioOut(
+        cash_balance=portfolio.cash_balance,
+        initial_capital=portfolio.initial_capital,
+        open_predictions_value=open_value,
+        total_value=portfolio.cash_balance + open_value,
+    )

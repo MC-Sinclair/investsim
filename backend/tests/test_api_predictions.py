@@ -1,3 +1,5 @@
+import pytest
+
 from investsim.api.deps import get_market_data_provider
 from investsim.providers.market_data import FakeMarketDataProvider
 
@@ -25,7 +27,8 @@ def test_post_predictions_happy_path_deducts_cash(client):
     assert body["status"] == "open"
 
     portfolio = client.get("/portfolio")
-    assert portfolio.status_code == 404  # /portfolio aun no existe (Task 4)
+    assert portfolio.status_code == 200
+    assert portfolio.json()["cash_balance"] == pytest.approx(990.0)
 
 
 def test_post_predictions_insufficient_funds_400(client):

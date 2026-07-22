@@ -11,6 +11,7 @@ from investsim.db.repositories import PortfolioRepository, PredictionRepository
 from investsim.providers.market_data import MarketDataProvider
 from investsim.services.agent_service import AgentService
 from investsim.services.portfolio_service import PortfolioService
+from investsim.services.settlement_service import SettlementService
 
 
 def get_session(request: Request) -> Iterator[Session]:
@@ -50,6 +51,27 @@ def get_portfolio_service(
     clock: Callable[[], datetime] = Depends(get_clock),
 ) -> PortfolioService:
     return PortfolioService(
+        PortfolioRepository(session),
+        PredictionRepository(session),
+        market_data,
+        clock=clock,
+    )
+
+
+def get_portfolio_repo(session: Session = Depends(get_session)) -> PortfolioRepository:
+    return PortfolioRepository(session)
+
+
+def get_prediction_repo(session: Session = Depends(get_session)) -> PredictionRepository:
+    return PredictionRepository(session)
+
+
+def get_settlement_service(
+    session: Session = Depends(get_session),
+    market_data: MarketDataProvider = Depends(get_market_data_provider),
+    clock: Callable[[], datetime] = Depends(get_clock),
+) -> SettlementService:
+    return SettlementService(
         PortfolioRepository(session),
         PredictionRepository(session),
         market_data,
