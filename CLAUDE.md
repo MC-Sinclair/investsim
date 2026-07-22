@@ -19,7 +19,7 @@ El proyecto está **en fase de diseño**: por ahora solo existen documentos, aú
 
 | Tema | v1 | Futuro |
 |------|----|--------|
-| Cerebro del agente | Agente por reglas determinista (`RuleBasedEngine`) sobre señales intradía | LLM local (Ollama) tras la misma interfaz `RecommendationEngine`; Claude API si algún día hay presupuesto |
+| Cerebro del agente | Agente por reglas determinista (`RuleBasedEngine`) sobre señales intradía | `ClaudeCliEngine`: puente con el CLI de Claude Code (misma interfaz `RecommendationEngine`); Ollama descartado por calidad limitada |
 | Activos | Acciones / ETFs | Crypto (Finnhub ya lo soporta) |
 | Fuente de datos | Finnhub, tras interfaz `MarketDataProvider` | Más proveedores tras la misma interfaz |
 | Predicción | Operación simulada de compra + `direction`/`confidence` para tasa de acierto | Cartera multi-activo |
@@ -69,6 +69,12 @@ Servidor de desarrollo de la API:
 python -m uvicorn investsim.api.app:app --reload   # http://127.0.0.1:8000
 ```
 
+Motor de recomendación seleccionable con `RECOMMENDATION_ENGINE` (`rules` por defecto, `claude_cli` para el motor LLM — requiere el CLI `claude` instalado y autenticado):
+
+```bash
+RECOMMENDATION_ENGINE=claude_cli python -m uvicorn investsim.api.app:app --reload
+```
+
 Frontend (desde `frontend/`, con el backend corriendo en paralelo vía uvicorn):
 
 ```bash
@@ -88,4 +94,4 @@ npm test          # suite de Vitest
 
 ## Evolución futura (documentar, no construir hasta que se pida)
 
-Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM local (Ollama) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI (hecho: 5 endpoints REST sobre `AgentService`/`PortfolioService`/`SettlementService`) · **F5** frontend React (hecho: dashboard único con TanStack Query, ver `frontend/README.md`) · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
+Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM (hecho: `ClaudeCliEngine`, puente con el CLI de Claude Code — Ollama descartado por calidad limitada) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI (hecho: 5 endpoints REST sobre `AgentService`/`PortfolioService`/`SettlementService`) · **F5** frontend React (hecho: dashboard único con TanStack Query, ver `frontend/README.md`) · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
