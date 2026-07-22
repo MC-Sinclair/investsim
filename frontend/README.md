@@ -1,32 +1,26 @@
-# React + TypeScript + Vite
+# InvestSim — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Dashboard React (Vite) que consume la API FastAPI de InvestSim (`investsim/api/`).
 
-Currently, two official plugins are available:
+## Desarrollo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Con el backend corriendo (desde la raíz del repo: `python -m uvicorn investsim.api.app:app --reload`):
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+**Importante:** abre el dashboard en `http://localhost:5173`, **no** en `http://127.0.0.1:5173`. El backend solo permite CORS desde orígenes que coincidan con `http://localhost:<puerto>` (`allow_origin_regex` en `investsim/api/app.py`). Si abres por `127.0.0.1`, todas las llamadas a la API se bloquean por CORS sin más explicación en la UI — solo se ve en la consola del navegador.
+
+## Variables de entorno
+
+- `VITE_API_URL` — URL base de la API FastAPI. Por defecto `http://127.0.0.1:8000` si no se define. Ver `.env.example`.
+
+## Tests
+
+```bash
+npm test
+```
+
+Sin red real: `fetch` se mockea en todos los tests (ver `src/api/client.test.ts` y los tests de hooks/componentes).

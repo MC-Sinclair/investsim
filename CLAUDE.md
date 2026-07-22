@@ -49,7 +49,7 @@ Frontend (React)  ──REST──►  API (FastAPI)  ──►  Servicios de do
 ## Layout
 
 - `backend/` — raíz del proyecto Python, paquete `investsim` (dominio, db, providers, agent, services, api, metrics).
-- `frontend/` — React (Vite). Fase 5.
+- `frontend/` — dashboard React (Vite) que consume la API FastAPI (`investsim/api/`). Ver `frontend/README.md`.
 - `docs/superpowers/` — specs y plans. **Fuente de verdad del diseño.**
 
 ## Comandos (backend, una vez exista código de Fase 1)
@@ -69,6 +69,14 @@ Servidor de desarrollo de la API:
 python -m uvicorn investsim.api.app:app --reload   # http://127.0.0.1:8000
 ```
 
+Frontend (desde `frontend/`, con el backend corriendo en paralelo vía uvicorn):
+
+```bash
+npm install
+npm run dev       # http://localhost:5173 -- IMPORTANTE: no uses 127.0.0.1 (ver frontend/README.md, CORS)
+npm test          # suite de Vitest
+```
+
 ## Convenciones
 
 - Python **3.11+** (se usa sintaxis `X | None`), SQLAlchemy **2.x** (`DeclarativeBase` / `Mapped` / `mapped_column`).
@@ -80,4 +88,4 @@ python -m uvicorn investsim.api.app:app --reload   # http://127.0.0.1:8000
 
 ## Evolución futura (documentar, no construir hasta que se pida)
 
-Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM local (Ollama) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI (hecho: 5 endpoints REST sobre `AgentService`/`PortfolioService`/`SettlementService`) · **F5** frontend React · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
+Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM local (Ollama) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI (hecho: 5 endpoints REST sobre `AgentService`/`PortfolioService`/`SettlementService`) · **F5** frontend React (hecho: dashboard único con TanStack Query, ver `frontend/README.md`) · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
