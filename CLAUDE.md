@@ -48,7 +48,7 @@ Frontend (React)  ──REST──►  API (FastAPI)  ──►  Servicios de do
 
 ## Layout
 
-- `backend/` — raíz del proyecto Python, paquete `investsim` (dominio, db, providers, services, metrics). Aún por crear en la Fase 1.
+- `backend/` — raíz del proyecto Python, paquete `investsim` (dominio, db, providers, agent, services, api, metrics).
 - `frontend/` — React (Vite). Fase 5.
 - `docs/superpowers/` — specs y plans. **Fuente de verdad del diseño.**
 
@@ -63,6 +63,12 @@ python -m pytest backend/tests/test_settlement_service.py -v          # un fiche
 python -m pytest backend/tests/test_settlement_service.py::test_mark_to_market_does_not_persist -v   # un solo test
 ```
 
+Servidor de desarrollo de la API:
+
+```bash
+python -m uvicorn investsim.api.app:app --reload   # http://127.0.0.1:8000
+```
+
 ## Convenciones
 
 - Python **3.11+** (se usa sintaxis `X | None`), SQLAlchemy **2.x** (`DeclarativeBase` / `Mapped` / `mapped_column`).
@@ -74,4 +80,4 @@ python -m pytest backend/tests/test_settlement_service.py::test_mark_to_market_d
 
 ## Evolución futura (documentar, no construir hasta que se pida)
 
-Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM local (Ollama) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI · **F5** frontend React · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
+Fases planificadas tras el núcleo de dominio (Fase 1): **F2** datos reales (Finnhub) · **F3a** agente por reglas (hecho: `RuleBasedEngine` + `AgentService`, sin LLM) · **F3b** motor LLM local (Ollama) como segunda implementación de `RecommendationEngine` · **F4** API FastAPI (hecho: 5 endpoints REST sobre `AgentService`/`PortfolioService`/`SettlementService`) · **F5** frontend React · **F6** pulido (observabilidad de coste, watchlist). Más adelante: agente híbrido ML+Claude, crypto/multi-activo, scheduler, Docker. Ver la sección "Evolución futura" del spec para el detalle.
