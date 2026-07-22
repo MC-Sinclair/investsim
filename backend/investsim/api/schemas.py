@@ -54,3 +54,13 @@ class PortfolioOut(BaseModel):
     initial_capital: float
     open_predictions_value: float
     total_value: float
+
+
+class MetricsOut(BaseModel):
+    total_predictions: int
+    settled: int
+    hits: int
+    hit_rate_pct: float
+    total_invested: float
+    total_final_value: float
+    total_return_pct: float

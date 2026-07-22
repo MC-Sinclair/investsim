@@ -12,6 +12,7 @@ from investsim.api.deps import (
     get_settlement_service,
 )
 from investsim.api.schemas import (
+    MetricsOut,
     OpenPredictionIn,
     PortfolioOut,
     PredictionOut,
@@ -20,6 +21,7 @@ from investsim.api.schemas import (
 )
 from investsim.db.repositories import PortfolioRepository, PredictionRepository
 from investsim.db.tables import PredictionRow
+from investsim.metrics import compute_metrics
 from investsim.services.agent_service import AgentService
 from investsim.services.portfolio_service import PortfolioService
 from investsim.services.settlement_service import SettlementService
@@ -112,3 +114,13 @@ def list_predictions(
         )
         result.append(_prediction_to_out(pred, current_value))
     return result
+
+
+@router.get("/metrics", response_model=MetricsOut)
+def get_metrics(
+    settlement_service: SettlementService = Depends(get_settlement_service),
+    prediction_repo: PredictionRepository = Depends(get_prediction_repo),
+) -> MetricsOut:
+    settlement_service.settle_due()
+    metrics = compute_metrics(prediction_repo.list_all())
+    return MetricsOut(**asdict(metrics))
