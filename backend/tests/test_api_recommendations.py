@@ -2,7 +2,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-from investsim.api.deps import get_market_data_provider
+from investsim.agent.claude_cli import (
+    ClaudeCliTimeout,
+    ClaudeCliUnavailable,
+    InvalidClaudeCliResponse,
+)
+from investsim.api.deps import get_market_data_provider, get_recommendation_engine
 from investsim.providers.market_data import (
     FakeMarketDataProvider,
     MarketSnapshot,
@@ -61,6 +66,51 @@ def test_post_recommendations_provider_unavailable_503(client):
             raise ProviderUnavailable(symbol)
 
     client.app.dependency_overrides[get_market_data_provider] = lambda: _BrokenProvider()
+
+    response = client.post("/recommendations", json={"symbol": "AAPL"})
+
+    assert response.status_code == 503
+
+
+def test_post_recommendations_claude_cli_unavailable_503(client):
+    fake = FakeMarketDataProvider({}, snapshots={"AAPL": _snapshot()})
+    client.app.dependency_overrides[get_market_data_provider] = lambda: fake
+
+    class _BrokenEngine:
+        def propose(self, snapshot):
+            raise ClaudeCliUnavailable("CLI no encontrado")
+
+    client.app.dependency_overrides[get_recommendation_engine] = lambda: _BrokenEngine()
+
+    response = client.post("/recommendations", json={"symbol": "AAPL"})
+
+    assert response.status_code == 503
+
+
+def test_post_recommendations_claude_cli_timeout_503(client):
+    fake = FakeMarketDataProvider({}, snapshots={"AAPL": _snapshot()})
+    client.app.dependency_overrides[get_market_data_provider] = lambda: fake
+
+    class _BrokenEngine:
+        def propose(self, snapshot):
+            raise ClaudeCliTimeout("timeout")
+
+    client.app.dependency_overrides[get_recommendation_engine] = lambda: _BrokenEngine()
+
+    response = client.post("/recommendations", json={"symbol": "AAPL"})
+
+    assert response.status_code == 503
+
+
+def test_post_recommendations_invalid_claude_cli_response_503(client):
+    fake = FakeMarketDataProvider({}, snapshots={"AAPL": _snapshot()})
+    client.app.dependency_overrides[get_market_data_provider] = lambda: fake
+
+    class _BrokenEngine:
+        def propose(self, snapshot):
+            raise InvalidClaudeCliResponse("respuesta invalida")
+
+    client.app.dependency_overrides[get_recommendation_engine] = lambda: _BrokenEngine()
 
     response = client.post("/recommendations", json={"symbol": "AAPL"})
 

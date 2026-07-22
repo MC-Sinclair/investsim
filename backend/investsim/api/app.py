@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from investsim.agent.claude_cli import ClaudeCliEngine
 from investsim.agent.rules import RuleBasedEngine
 from investsim.api.errors import register_exception_handlers
 from investsim.api.routes import router
@@ -40,7 +41,11 @@ async def lifespan(app: FastAPI):
 
     app.state.session_factory = session_factory
     app.state.market_data = FinnhubMarketDataProvider(load_finnhub_config())
-    app.state.engine = RuleBasedEngine()
+
+    engine_name = os.environ.get("RECOMMENDATION_ENGINE", "rules")
+    app.state.engine = (
+        ClaudeCliEngine() if engine_name == "claude_cli" else RuleBasedEngine()
+    )
 
     yield
 
