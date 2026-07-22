@@ -95,3 +95,20 @@ def get_portfolio(
         open_predictions_value=open_value,
         total_value=portfolio.cash_balance + open_value,
     )
+
+
+@router.get("/predictions", response_model=list[PredictionOut])
+def list_predictions(
+    settlement_service: SettlementService = Depends(get_settlement_service),
+    prediction_repo: PredictionRepository = Depends(get_prediction_repo),
+) -> list[PredictionOut]:
+    settlement_service.settle_due()
+    result: list[PredictionOut] = []
+    for pred in prediction_repo.list_all():
+        current_value = (
+            settlement_service.mark_to_market(pred)
+            if pred.status == "open"
+            else None
+        )
+        result.append(_prediction_to_out(pred, current_value))
+    return result
