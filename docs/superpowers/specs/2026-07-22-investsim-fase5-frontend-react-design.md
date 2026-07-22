@@ -26,7 +26,9 @@ Esta fase construye el frontend React (Vite) que consume esa API. Herramienta pe
 - **TanStack Query** para las 5 llamadas a la API (mutations para `POST`, queries para `GET`); da manejo de loading/error e invalidación de queries sin escribir esa lógica a mano.
 - **CSS Modules** por componente + variables compartidas en `src/styles/theme.css`. Paleta oscura estilo fintech (fondo oscuro, verde/rojo para ganancias/pérdidas, tipografía tabular para cifras). Sin librería de componentes de terceros.
 - **Vitest + React Testing Library** para tests (unitarios de `api/`/`hooks/`, de comportamiento para componentes). Sin red real en la suite — mismo principio que el backend (`FakeMarketDataProvider` allá, fetch mockeado aquí).
-- `VITE_API_URL` como variable de entorno apuntando a `http://127.0.0.1:8000` en desarrollo. El backend ya expone CORS abierto a cualquier puerto de `localhost` (`allow_origin_regex=r"http://localhost:\d+"`).
+- `VITE_API_URL` como variable de entorno apuntando a `http://127.0.0.1:8000` en desarrollo.
+
+**Aviso de CORS (verificado en `investsim/api/app.py`):** el backend usa `allow_origin_regex=r"http://localhost:\d+"`, que matchea el *origin* del frontend, no la URL del backend. Por tanto el dashboard **debe abrirse en `http://localhost:5173`** (el default de Vite). Si se abre en `http://127.0.0.1:5173`, el origin no matchea el regex y el navegador **bloquea todas las llamadas** con un error de CORS difícil de diagnosticar. El README del frontend debe advertirlo explícitamente.
 
 ## Estructura de carpetas
 
@@ -72,11 +74,40 @@ frontend/
 
 **Tabla de predicciones (`PredictionsTable`):** una fila por predicción con símbolo, fecha, importe, estado (`open`/`settled`, coloreado) y, según estado: `current_value` (abiertas) o `final_value`/`pnl_pct`/`hit` (liquidadas) — campos que `GET /predictions` ya calcula.
 
+**Orden:** `PredictionRepository.list_all()` es un `select(PredictionRow)` **sin `ORDER BY`** (verificado en `investsim/db/repositories.py`), así que la API no garantiza ningún orden. El frontend ordena en cliente por `id` descendente (más recientes primero) — usar `id` y no `created_at` evita depender del parseo de fechas descrito abajo. No se modifica el backend para esto.
+
+## Normalización de fechas (obligatoria)
+
+**Problema verificado ejecutando la API:** los timestamps se serializan en dos formatos distintos según el endpoint, porque las columnas de `investsim/db/tables.py` son `DateTime` *sin* `timezone=True` y SQLite las devuelve *naive* al releerlas:
+
+```
+POST /predictions  → created_at: "2026-07-22T19:53:03.555030Z"   (aware, con Z)
+GET  /predictions  → created_at: "2026-07-22T19:53:03.555030"    (naive, sin Z)
+```
+
+JavaScript interpreta un ISO-8601 **sin** designador de zona como **hora local**, y **con** `Z` como UTC. Sin tratamiento, la misma predicción se mostraría desplazada (2 h en España en horario de verano) según el endpoint del que provenga.
+
+**Decisión:** el frontend trata **todos** los timestamps de la API como UTC. `api/client.ts` (o un helper `parseApiDate` en `api/types.ts`) normaliza cada campo de fecha añadiendo el sufijo `Z` cuando el string no trae ya designador de zona, antes de construir el `Date`. Todos los componentes consumen fechas ya normalizadas — ninguno llama a `new Date(...)` sobre el string crudo de la API.
+
+Esta normalización debe tener test unitario propio, cubriendo ambos formatos (con y sin `Z`) y comprobando que producen el mismo instante. **No se modifica el backend** en esta fase; si más adelante se quisiera arreglar en origen, sería migrar las columnas a `DateTime(timezone=True)`, lo que afecta a datos ya persistidos y queda fuera de alcance aquí.
+
 ## Manejo de errores
 
-- `api/client.ts` centraliza el `fetch`: toda respuesta no-`2xx` lanza un error tipado con `status` y `detail` (el shape `{"detail": "..."}` que ya produce `investsim/api/errors.py`).
+- `api/client.ts` centraliza el `fetch`: toda respuesta no-`2xx` lanza un error tipado con `status` y un `message` **siempre string** (ver normalización abajo).
 - Cada hook expone ese error vía TanStack Query (`error`/`isError`); cada componente decide cómo mostrarlo — sin un manejador global que homogeneice contextos distintos (un fallo al pedir recomendación no es lo mismo que un fallo al cargar el portfolio).
 - Backend inalcanzable (no solo error HTTP, sino sin respuesta): mismo camino, TanStack Query lo captura como error de red; el panel afectado muestra "No se pudo conectar con la API" con reintento manual.
+
+### Normalización de errores (obligatoria)
+
+**`detail` no siempre es un string (verificado ejecutando la API):** los errores de dominio de `investsim/api/errors.py` devuelven `{"detail": "Simbolo desconocido: NOPE"}` (string), pero los errores de validación de FastAPI devuelven `{"detail": [{"type": "missing", "loc": ["body","amount"], "msg": "Field required", ...}]}` — una **lista de objetos**. Si un componente renderizase ese `detail` directamente, React lanzaría *"Objects are not valid as a React child"*.
+
+Por eso `client.ts` normaliza el cuerpo del error a un único `message: string`:
+
+- `detail` string (404/503/400 de dominio) → se usa tal cual.
+- `detail` array (422 de validación) → se concatenan los `msg` de cada entrada.
+- Sin `detail`, o cuerpo no-JSON → mensaje genérico con el código HTTP.
+
+Los componentes consumen solo `message`, nunca `detail` crudo.
 
 ## Aviso legal
 
@@ -84,7 +115,8 @@ frontend/
 
 ## Estrategia de testing
 
-- **`api/client.ts`:** tests unitarios con `fetch` mockeado — verifica construcción de URL/body y traducción de errores HTTP al shape tipado.
+- **`api/client.ts`:** tests unitarios con `fetch` mockeado — verifica construcción de URL/body y la **normalización de errores** a `message: string` en los tres casos (`detail` string, `detail` array de 422, cuerpo sin `detail`).
+- **Normalización de fechas:** test unitario propio — un timestamp con `Z` y el mismo sin `Z` deben producir **el mismo instante** (ver sección "Normalización de fechas").
 - **Hooks (`hooks/*.ts`):** tests unitarios con `api/client` mockeado — verifican que llaman al endpoint correcto y exponen loading/error/data como se espera.
 - **Componentes (`components/*.tsx`):** tests de comportamiento con React Testing Library + `userEvent`, con los hooks mockeados. Ejemplos: "al aceptar con éxito, la tarjeta de recomendación se limpia"; "un 404 al pedir recomendación muestra el mensaje de error sin romper el resto del dashboard".
 - Sin tests visuales/CSS (el pulido se verifica a ojo) ni tests de integración contra el backend real en la suite rápida — mismo principio que el backend (sin red en el bucle de tests).
