@@ -12,3 +12,6 @@ investsim.db
 
 # Secretos
 .env
+
+# graphify (artefacto derivado, se regenera)
+graphify-out/
