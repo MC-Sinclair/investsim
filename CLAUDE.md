@@ -8,12 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado actual (importante)
 
-El proyecto está **en fase de diseño**: por ahora solo existen documentos, aún no hay código de aplicación. Todo el trabajo se rige por:
+Fases 1, 2, 3a, 3b, 4 y 5 **implementadas y probadas** (backend: 99 tests; frontend: 42 tests). Siguiente fase planificada: **F6** (pulido). Diseño y plan de cada fase en `docs/superpowers/specs/` y `docs/superpowers/plans/`: el diseño base es `docs/superpowers/specs/2026-07-07-investsim-design.md`.
 
-- **Diseño aprobado:** `docs/superpowers/specs/2026-07-07-investsim-design.md`
-- **Plan de la Fase 1 (TDD, tarea a tarea):** `docs/superpowers/plans/2026-07-07-investsim-fase1-nucleo-dominio.md`
-
-**Lee esos dos ficheros antes de implementar nada.** La implementación sigue el plan de fase; no improvises arquitectura por fuera de él.
+Cualquier fase nueva sigue el mismo flujo (spec → plan → TDD); no improvises arquitectura por fuera de él. El `README.md` es la cara pública del repo: actualízalo cuando cambien funciones, endpoints o comandos.
 
 ## Decisiones de arquitectura (fijadas en brainstorming)
 
@@ -52,7 +49,7 @@ Frontend (React)  ──REST──►  API (FastAPI)  ──►  Servicios de do
 - `frontend/` — dashboard React (Vite) que consume la API FastAPI (`investsim/api/`). Ver `frontend/README.md`.
 - `docs/superpowers/` — specs y plans. **Fuente de verdad del diseño.**
 
-## Comandos (backend, una vez exista código de Fase 1)
+## Comandos (backend)
 
 Ejecutar desde la **raíz del repo**. El paquete se instala editable, por eso los tests corren con `python -m pytest`.
 
