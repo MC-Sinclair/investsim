@@ -3,8 +3,8 @@
 > Agente de IA que hace predicciones de inversión con **capital virtual** y después las
 > contrasta con lo que de verdad hizo el mercado.
 
-*"Si hubieras invertido 10 €, ahora tendrías 13,40 € (+34 %)."* Esa es la pregunta que
-responde InvestSim: aprender a invertir viendo aciertos y fallos reales, sin arriesgar
+*"Si hubieras invertido 10 €, ahora tendrías 13,40 € (+34 %)."* Esa es la respuesta que da
+InvestSim. La idea es aprender a invertir viendo aciertos y fallos reales, sin arriesgar
 dinero.
 
 > ⚠️ Simulación educativa, no es asesoramiento financiero. Capital ficticio.
@@ -61,8 +61,8 @@ Frontend (React)  ──REST──►  API (FastAPI)  ──►  Servicios de do
 
 ## Stack
 
-**Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.x, SQLite, httpx, pytest
-**Frontend:** React 19, TypeScript, Vite, TanStack Query, Vitest + Testing Library
+- **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.x, SQLite, httpx, pytest
+- **Frontend:** React 19, TypeScript, Vite, TanStack Query, Vitest + Testing Library
 
 ## API
 
@@ -109,8 +109,7 @@ Los tests de integración contra Finnhub y el CLI de Claude reales están marcad
 
 ## Cómo se construyó
 
-Por fases, cada una con su diseño y su plan en [`docs/superpowers/`](docs/superpowers/)
-y desarrollada con TDD:
+Por fases. Cada fase produce software que funciona y está probado por sí solo:
 
 | Fase | Contenido |
 |---|---|
@@ -121,8 +120,30 @@ y desarrollada con TDD:
 | 4 | API REST con FastAPI |
 | 5 | Dashboard en React |
 
+El proceso, el mismo en todas las fases:
+
+- **Diseño antes que código.** Cada fase empieza con un *brainstorming* que fija las
+  decisiones (qué motor, qué fuente de datos, qué queda fuera) y las deja escritas en una
+  spec, en [`docs/superpowers/specs/`](docs/superpowers/specs/).
+- **Plan por tareas.** La spec se convierte en un plan de tareas pequeñas y verificables,
+  en [`docs/superpowers/plans/`](docs/superpowers/plans/).
+- **TDD.** Cada tarea empieza por sus tests. El dominio se prueba sin red gracias a un
+  proveedor de mercado *fake* y al reloj inyectado.
+- **Verificación con servicios reales.** Las fases cierran con *smoke tests* manuales
+  ([`backend/examples/`](backend/examples/)), y las que tocan servicios externos se
+  prueban también contra Finnhub o el CLI real. Así salió, antes de escribir código, que
+  lanzar el CLI de Claude desde Python falla en Windows (el CLI es un `.CMD`) y que sin
+  UTF-8 explícito se corrompen los acentos. La spec se corrigió antes de implementar.
+- **Desarrollo asistido por IA** con [Claude Code](https://claude.com/claude-code) como
+  pareja de programación. Yo dirijo el problema, las decisiones de diseño y la revisión;
+  el asistente ejecuta sobre un plan aprobado, y cada cambio pasa por tests y revisión
+  antes de entrar. El `CLAUDE.md` del repo es el contexto que le doy: arquitectura,
+  convenciones y reglas del proyecto.
+- **Commits pequeños**, uno por tarea, con formato *Conventional Commits* (`feat:`,
+  `fix:`, `docs:`...).
+
 **Próximos pasos:** observabilidad del coste del motor LLM, *watchlist*, *scheduler* de
-liquidación automática, crypto y cartera multi-activo.
+liquidación automática, criptomonedas y cartera multiactivo.
 
 ## Licencia
 

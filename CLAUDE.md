@@ -87,6 +87,7 @@ npm test          # suite de Vitest
 - Timestamps en **UTC**; el tiempo se inyecta como `clock: Callable[[], datetime]` en los servicios para poder testear el vencimiento de predicciones.
 - **Tests del dominio sin red:** se usa `FakeMarketDataProvider`, nunca Finnhub/Claude reales. Los tests de integración con APIs reales van marcados aparte y no corren en el bucle rápido.
 - **Aviso legal obligatorio en UI:** *"Simulación educativa, no es asesoramiento financiero. Capital ficticio."* — presente en el dashboard y en cada recomendación.
+- Commits con formato `tipo(scope): resumen en español` (`feat:`, `fix:`, `docs:`...), **sin** trailer `Co-Authored-By` ni ninguna atribución a Claude.
 - Flujo de trabajo del repo: **spec → plan → implementación TDD** (skills `brainstorming` → `writing-plans` → ejecución). Cada fase produce software probado por sí solo; commits frecuentes por tarea.
 
 ## Evolución futura (documentar, no construir hasta que se pida)
